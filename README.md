@@ -3,7 +3,7 @@
 
 ## Features
 For all information regarding progress on updates or features, please have a look at our
-[Milestones](https://github.com/UndefinedBHVR/Stratosphere/milestones) or [Project Boards](https://github.com/UndefinedBHVR/projects/)
+[Milestones](https://github.com/UndefinedBHVR/Stratosphere/milestones) or [Project Boards](https://github.com/UndefinedBHVR/Stratosphere/projects/)
 ## Installation
 To install Atomic, all you need to do is the following:
 
