@@ -1,5 +1,5 @@
 # Stratosphere
-`Stratosphere` is a fully open source Social Network backend written in Rust, inspired by the likes of Twitter and GooglePlus.
+`Stratosphere` is a fully open source Social Network backend written in Rust, inspired by the likes of Twitter and Google+.
 
 ## Features
 For all information regarding progress on updates or features, please have a look at our
