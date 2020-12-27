@@ -1,11 +1,11 @@
 # Stratosphere
-`Stratosphere` is a fully open source Social Network backend written in Rust, inspired by the likes of Twitter and GooglePlus.
+`Stratosphere` is a fully open source Social Network backend written in Rust, inspired by the likes of Twitter and Google+.
 
 ## Features
 For all information regarding progress on updates or features, please have a look at our
 [Milestones](https://github.com/UndefinedBHVR/Stratosphere/milestones) or [Project Boards](https://github.com/UndefinedBHVR/Stratosphere/projects/)
 ## Installation
-To install Atomic, all you need to do is the following:
+To install Stratosphere, all you need to do is the following:
 
 First, clone the project.
 ```bash
