@@ -5,7 +5,7 @@
 For all information regarding progress on updates or features, please have a look at our
 [Milestones](https://github.com/UndefinedBHVR/Stratosphere/milestones) or [Project Boards](https://github.com/UndefinedBHVR/Stratosphere/projects/)
 ## Installation
-To install Atomic, all you need to do is the following:
+To install Stratosphere, all you need to do is the following:
 
 First, clone the project.
 ```bash
@@ -25,8 +25,6 @@ In order to create the database and include all the required tables.\
 Afterwards, all that's left is to compile and run.
 ## Contributing
 Pull requests are always welcomed. If you have a potentially breaking change, please open an issue first stating what the change is.
-
-Please also make sure to add tests, or update old ones if required!
 
 ## License
 Statosphere is currently licensed under the MIT License.\
