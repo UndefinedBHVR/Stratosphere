@@ -1,6 +1,7 @@
 use std::time::SystemTime;
 use argon2::{self, Config};
 use crate::util::gen_random;
+use crate::schema::users;
 #[derive(Debug, Queryable, Insertable, Deserialize)]
 pub struct User{
     id: String,

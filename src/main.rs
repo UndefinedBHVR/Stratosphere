@@ -15,6 +15,7 @@ extern crate serde_json;
 
 pub mod util;
 pub mod user;
+pub mod schema;
 //A simple reponse to verify everything works as intended.
 async fn index_handler(_: Request<Body>) -> Result<Response<Body>, Infallible> {
     let json = json_response(json!({"response": "Welcome to Stratosphere!"}));
