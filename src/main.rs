@@ -1,10 +1,20 @@
 use hyper::{Body, Request, Response, Server};
 use routerify::prelude::*;
 use routerify::{Middleware, Router, RouterService};
-use serde_json::json;
 use std::{convert::Infallible, net::SocketAddr};
 use util::json_response;
+//Macro Use
+#[macro_use]
+extern crate lazy_static;
+#[macro_use]
+extern crate diesel;
+#[macro_use]
+extern crate serde;
+#[macro_use]
+extern crate serde_json;
+
 pub mod util;
+pub mod user;
 //A simple reponse to verify everything works as intended.
 async fn index_handler(_: Request<Body>) -> Result<Response<Body>, Infallible> {
     let json = json_response(json!({"response": "Welcome to Stratosphere!"}));
