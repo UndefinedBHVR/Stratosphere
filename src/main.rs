@@ -12,13 +12,23 @@ extern crate diesel;
 extern crate serde;
 #[macro_use]
 extern crate serde_json;
-
-pub mod util;
-pub mod user;
+//modules
 pub mod schema;
-//A simple reponse to verify everything works as intended.
+pub mod user;
+pub mod util;
+
+/*
+* The main section of the program contains the basic application as well as uncategorized route handlers (IE: temporary testing handlers)
+* This directory should NOT contain route handlers nor middleware handlers for specific modules.
+*/
+const MODE: &str = "Debug";
+#[cfg(debug)]
+const MODE: &str = "Debug";
+#[cfg(release)]
+const MODE: &str = "Release";
+
 async fn index_handler(_: Request<Body>) -> Result<Response<Body>, Infallible> {
-    let json = json_response(json!({"response": "Welcome to Stratosphere!"}));
+    let json = json_response(json!({"status": 200, "response": "Welcome to Stratosphere!"}));
     Ok(json)
 }
 
@@ -41,14 +51,7 @@ fn create_router() -> Router<Body, Infallible> {
         .build()
         .unwrap()
 }
-//Returns current mode
-fn determine_mode() -> &'static str {
-    #[cfg(debug)]
-    return "Debug";
-    #[cfg(release)]
-    return "Release";
-    return "Development";
-}
+
 #[tokio::main]
 async fn main() {
     let router = create_router();
@@ -57,8 +60,7 @@ async fn main() {
     let server = Server::bind(&addr).serve(service);
     println!(
         "Stratosphere initialized in {} mode and running on: {}",
-        determine_mode(),
-        addr
+        MODE, addr
     );
     if let Err(err) = server.await {
         eprintln!("Server error: {}", err);
