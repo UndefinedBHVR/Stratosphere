@@ -1,12 +1,12 @@
 table! {
     users (id) {
         id -> Varchar,
-        nickname -> Nullable<Varchar>,
+        nickname -> Varchar,
         email -> Varchar,
         password -> Varchar,
         rank -> Int4,
         is_priv -> Bool,
-        updated_at -> Nullable<Timestamp>,
-        created_at -> Nullable<Timestamp>,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
     }
 }

@@ -1,13 +1,11 @@
-use diesel::{
-    r2d2::{Pool, ConnectionManager},
-    pg::PgConnection
-};
+use diesel::{pg::PgConnection, r2d2::{ConnectionManager, Pool, PooledConnection}};
 use dotenv::dotenv;
 use lazy_static::lazy_static;
 use std::env;
 
 
 type DbPool = Pool<ConnectionManager<PgConnection>>;
+type DbPoolConn = PooledConnection<ConnectionManager<PgConnection>>;
 pub struct Database {
     pub db_connection: DbPool,
 }
@@ -24,4 +22,10 @@ lazy_static! {
                 .expect("failed to create db connection_pool")
         }
     };
+}
+pub fn get_database() -> DbPoolConn{
+    DATABASE.db_connection.get().ok().unwrap()
+}
+pub fn can_connect() -> bool{
+    return DATABASE.db_connection.get().is_ok();
 }
