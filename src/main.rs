@@ -2,10 +2,9 @@ use hyper::{Body, Request, Response, Server};
 use routerify::prelude::*;
 use routerify::{Middleware, Router, RouterService};
 use std::{convert::Infallible, net::SocketAddr};
+use user::routes::create_user;
 use util::json_response;
 //Macro Use
-#[macro_use]
-extern crate lazy_static;
 #[macro_use]
 extern crate diesel;
 #[macro_use]
@@ -48,6 +47,7 @@ fn create_router() -> Router<Body, Infallible> {
     Router::builder()
         .middleware(Middleware::pre(logger))
         .get("/", index_handler)
+        .post("/user/create", create_user)
         .build()
         .unwrap()
 }
