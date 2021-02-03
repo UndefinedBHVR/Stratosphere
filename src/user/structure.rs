@@ -42,9 +42,12 @@ impl User {
             created_at: time.naive_utc(),
         }
     }
-
     //getters
+    pub fn get_id(&self) -> String{
+        return self.id.clone()
+    }
 
+    //creators
     pub fn get_user(id: String) -> Result<Self, UserError> {
         if can_connect() {
             let db: &PgConnection = &get_database();
@@ -87,6 +90,7 @@ impl User {
         self.password = Self::hash_pass(password);
     }
 
+    //savers
     pub fn save_user(&mut self) -> Result<bool, String> {
         let time: DateTime<Utc> = Utc::now();
         self.updated_at = time.naive_utc();
@@ -107,6 +111,7 @@ impl User {
         return Err(format!("{:?}", UserError::DbFailed));
     }
 
+    //util
     fn match_errors(e: dsl_err) -> UserError {
         match e.to_string().as_str() {
             "duplicate key value violates unique constraint \"users_email_key\"" => {
@@ -121,8 +126,6 @@ impl User {
             _ => UserError::Unknown,
         }
     }
-
-    //utilities
 
     fn hash_pass(password: String) -> String {
         let salt = gen_random(30);
@@ -180,7 +183,7 @@ pub struct UserCreatable {
     pub email: String,
     pub password: String,
 }
-
+#[derive(Deserialize)]
 pub struct UserLoginable {
     pub email: String,
     pub password: String,

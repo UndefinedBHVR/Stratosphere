@@ -7,12 +7,14 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-hyper = "0.13.9"
-routerify = "1.1"
+hyper = "0.14.2"
+routerify = { git = "https://github.com/seanpianka/routerify.git", branch = "master" }
+routerify-cors = { git = "https://github.com/seanpianka/routerify-cors.git", branch = "master" }
+routerify-query = { git = "https://github.com/seanpianka/routerify-query.git", branch = "master" }
 multer = "1.2"
 diesel = { version = "1.4.4", features = ["postgres", "r2d2", "chrono"] }
 dotenv = "0.15.0"
-tokio = { version = "0.2.23", features = ["full"] }
+tokio = { version = "1.1.1", features = ["full"] }
 serde = { version ="1.0.117", features = ["derive"] }
 serde_json = "1.0.59"
 lazy_static = "1.4.0"

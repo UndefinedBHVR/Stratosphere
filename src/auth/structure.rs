@@ -9,6 +9,8 @@ use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use diesel::{
     result::Error as dsl_err, ExpressionMethods, PgConnection, QueryDsl, QueryResult, RunQueryDsl,
 };
+use std::fmt::{Display};
+
 #[derive(Queryable, Insertable, Serialize, Deserialize, Debug, AsChangeset)]
 pub struct Auth{
     token: String,
@@ -19,7 +21,7 @@ pub struct Auth{
 }
 
 impl Auth{
-    //Creators
+    //creators
     pub fn new(user: String) -> Self{
         Self{
             token: gen_random(25),
@@ -30,7 +32,6 @@ impl Auth{
         }
     }
 
-    //Getters
     pub fn get_by_token(id: String) -> Result<Self, AuthError> {
         if can_connect() {
             let db: &PgConnection = &get_database();
@@ -48,8 +49,36 @@ impl Auth{
             Err(AuthError::DbFailed)
         }
     }
+    
+    //getters
+    pub fn get_token(&self) -> String{
+        return self.token.clone()
+    }
 
-    //Setters
+    pub fn get_refresh(&self) -> String{
+        return self.refresh.clone()
+    }
+
+    //savers
+    pub fn save_auth(&mut self) -> Option<AuthError>{
+        let _time: DateTime<Utc> = Utc::now();
+        let db: &PgConnection = &get_database();
+        if can_connect() {
+            let rslt = match Self::get_by_token(self.token.clone()) {
+                Ok(_u) => diesel::update(auths::table)
+                    .set(&*self)
+                    .filter(auth_dsl::token.eq(&self.token))
+                    .execute(db),
+                Err(_e) => diesel::insert_into(auths::table).values(&*self).execute(db),
+            };
+            match rslt {
+                Ok(_) => return None,
+                Err(e) => return Some(Self::match_errors(e)),
+            }
+        }
+        return Some(AuthError::DbFailed);
+    }
+
     pub fn refresh(id: String) -> Result<Self, AuthError> {
         if can_connect() {
             let db: &PgConnection = &get_database();
@@ -63,7 +92,7 @@ impl Auth{
                         None => u
                     }
                 },
-                Err(_e) => return Err(AuthError::UnknwonRefresh),
+                Err(_e) => return Err(AuthError::UnknownRefresh),
             };
             u.save_auth().unwrap();
             return Ok(u);
@@ -83,25 +112,6 @@ impl Auth{
         return None
     }
 
-    pub fn save_auth(&mut self) -> Result<bool, String>{
-        let _time: DateTime<Utc> = Utc::now();
-        let db: &PgConnection = &get_database();
-        if can_connect() {
-            let rslt = match Self::get_by_token(self.token.clone()) {
-                Ok(_u) => diesel::update(auths::table)
-                    .set(&*self)
-                    .filter(auth_dsl::token.eq(&self.token))
-                    .execute(db),
-                Err(_e) => diesel::insert_into(auths::table).values(&*self).execute(db),
-            };
-            match rslt {
-                Ok(_) => return Ok(true),
-                Err(e) => return Err(format!("{:?}", Self::match_errors(e))),
-            }
-        }
-        return Err(format!("{:?}", AuthError::DbFailed));
-    }
-
     fn match_errors(e: dsl_err) -> AuthError {
         match e.to_string().as_str() {
             "duplicate key value violates unique constraint \"auths_token_key\"" => {
@@ -111,13 +121,32 @@ impl Auth{
         }
     }
 }
-#[derive(Debug)]
+#[derive(Serialize, Debug)]
 pub enum AuthError{
     DbFailed,
     UnknownToken,
     TokenExpired,
     AuthExpired,
-    UnknwonRefresh,
+    UnknownRefresh,
     UnknownError,
     TokenExists
+}
+impl Display for AuthError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match *self {
+            Self::UnknownToken => write!(f, "The submitted Token could not be found!"),
+            Self::TokenExpired => write!(f, "The submitted token is expired!"),
+            Self::DbFailed => write!(f, "The Database appears to be offline!"),
+            Self::AuthExpired => write!(
+                f,
+                "This Authorization has expired!"
+            ),
+            Self::UnknownRefresh => write!(f, "The submitted refresh token is expired!"),
+            Self::UnknownError => write!(f, "An unknown error has occured!"),
+            Self::TokenExists => write!(
+                f,
+                "An issue has occured, please try again."
+            ),
+        }
+    }
 }
