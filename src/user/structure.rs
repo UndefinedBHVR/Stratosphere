@@ -9,6 +9,7 @@ use chrono::{DateTime, NaiveDateTime, Utc};
 use diesel::{
     result::Error as dsl_err, ExpressionMethods, PgConnection, QueryDsl, QueryResult, RunQueryDsl,
 };
+use std::fmt::{Display};
 
 /*
 * The Structure module contains a Database accessing Struct & its Implementation.
@@ -41,7 +42,9 @@ impl User {
             created_at: time.naive_utc(),
         }
     }
+
     //getters
+
     pub fn get_user(id: String) -> Result<Self, UserError> {
         if can_connect() {
             let db: &PgConnection = &get_database();
@@ -55,25 +58,46 @@ impl User {
         }
     }
 
+    pub fn get_by_login(email: String, password: String) -> Result<Self, UserError> {
+        if can_connect() {
+            let db: &PgConnection = &get_database();
+            let query: QueryResult<User> = user_dsl::users
+                .filter(user_dsl::email.eq(email))
+                .first::<User>(db);
+            let user = match query {
+                Ok(u) => u,
+                Err(_e) => return Err(UserError::BadLogin),
+            };
+            if Self::verify_pass(password, &user.password) {
+                return Ok(user);
+            }
+            return Err(UserError::BadLogin);
+        } else {
+            Err(UserError::DbFailed)
+        }
+    }
+
     //setters
+
     pub fn set_nickname(&mut self, nickname: String) {
         self.nickname = nickname;
     }
+
     pub fn set_password(&mut self, password: String) {
         self.password = Self::hash_pass(password);
     }
+
     pub fn save_user(&mut self) -> Result<bool, String> {
         let time: DateTime<Utc> = Utc::now();
         self.updated_at = time.naive_utc();
         let db: &PgConnection = &get_database();
-        let usr = self.clone();
         if can_connect() {
             let rslt = match Self::get_user(self.id.clone()) {
                 Ok(_u) => diesel::update(users::table)
-                    .set(usr)
+                    .set(&*self)
                     .filter(user_dsl::id.eq(&self.id))
                     .execute(db),
-                Err(_e) => diesel::insert_into(users::table).values(usr).execute(db),
+                Err(_e) => diesel::insert_into(users::table).values(&*self).execute(db),
             };
             match rslt {
                 Ok(_) => return Ok(true),
@@ -82,6 +106,7 @@ impl User {
         }
         return Err(format!("{:?}", UserError::DbFailed));
     }
+
     fn match_errors(e: dsl_err) -> UserError {
         match e.to_string().as_str() {
             "duplicate key value violates unique constraint \"users_email_key\"" => {
@@ -96,11 +121,17 @@ impl User {
             _ => UserError::Unknown,
         }
     }
+
     //utilities
+
     fn hash_pass(password: String) -> String {
         let salt = gen_random(30);
         let config = Config::default();
         argon2::hash_encoded(password.as_ref(), salt.as_ref(), &config).unwrap()
+    }
+
+    fn verify_pass(password: String, encoded: &String) -> bool {
+        return argon2::verify_encoded(encoded.as_ref(), password.as_ref()).unwrap();
     }
 }
 
@@ -116,6 +147,27 @@ pub enum UserError {
     IdExists,
     NameExists,
     Unknown,
+    BadLogin,
+}
+
+impl Display for UserError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match *self {
+            Self::NotFound => write!(f, "The requested User could not be found!"),
+            Self::EmailInUse => write!(f, "The requested Email is already in use!"),
+            Self::DbFailed => write!(f, "The Database appears to be offline!"),
+            Self::IdExists => write!(
+                f,
+                "The Database encountered an ID collision. Please try again!"
+            ),
+            Self::NameExists => write!(f, "The requested Username is already in use!"),
+            Self::Unknown => write!(f, "An unknown error has occured!"),
+            Self::BadLogin => write!(
+                f,
+                "The Email or Password provided does not match our records!"
+            ),
+        }
+    }
 }
 
 /*
@@ -125,6 +177,11 @@ pub enum UserError {
 #[derive(Deserialize)]
 pub struct UserCreatable {
     pub nickname: String,
+    pub email: String,
+    pub password: String,
+}
+
+pub struct UserLoginable {
     pub email: String,
     pub password: String,
 }

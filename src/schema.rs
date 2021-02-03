@@ -1,4 +1,14 @@
 table! {
+    auths (refresh) {
+        token -> Varchar,
+        refresh -> Varchar,
+        owner -> Varchar,
+        expiry -> Timestamp,
+        created -> Timestamp,
+    }
+}
+
+table! {
     users (id) {
         id -> Varchar,
         nickname -> Varchar,
@@ -10,3 +20,10 @@ table! {
         created_at -> Timestamp,
     }
 }
+
+joinable!(auths -> users (owner));
+
+allow_tables_to_appear_in_same_query!(
+    auths,
+    users,
+);
