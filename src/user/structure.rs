@@ -9,7 +9,7 @@ use chrono::{DateTime, NaiveDateTime, Utc};
 use diesel::{
     result::Error as dsl_err, ExpressionMethods, PgConnection, QueryDsl, QueryResult, RunQueryDsl,
 };
-use std::fmt::{Display};
+use std::fmt::Display;
 
 /*
 * The Structure module contains a Database accessing Struct & its Implementation.
@@ -43,8 +43,8 @@ impl User {
         }
     }
     //getters
-    pub fn get_id(&self) -> String{
-        return self.id.clone()
+    pub fn get_id(&self) -> String {
+        self.id.clone()
     }
 
     //creators
@@ -53,8 +53,8 @@ impl User {
             let db: &PgConnection = &get_database();
             let user: QueryResult<User> = user_dsl::users.find(id).first::<User>(db);
             match user {
-                Ok(u) => return Ok(u),
-                Err(_e) => return Err(UserError::NotFound),
+                Ok(u) => Ok(u),
+                Err(_e) => Err(UserError::NotFound),
             }
         } else {
             Err(UserError::DbFailed)
@@ -74,7 +74,7 @@ impl User {
             if Self::verify_pass(password, &user.password) {
                 return Ok(user);
             }
-            return Err(UserError::BadLogin);
+            Err(UserError::BadLogin)
         } else {
             Err(UserError::DbFailed)
         }
@@ -108,7 +108,7 @@ impl User {
                 Err(e) => return Err(format!("{:?}", Self::match_errors(e))),
             }
         }
-        return Err(format!("{:?}", UserError::DbFailed));
+        Err(format!("{:?}", UserError::DbFailed))
     }
 
     //util
@@ -133,8 +133,8 @@ impl User {
         argon2::hash_encoded(password.as_ref(), salt.as_ref(), &config).unwrap()
     }
 
-    fn verify_pass(password: String, encoded: &String) -> bool {
-        return argon2::verify_encoded(encoded.as_ref(), password.as_ref()).unwrap();
+    fn verify_pass(password: String, encoded: &str) -> bool {
+        return argon2::verify_encoded(encoded, password.as_ref()).unwrap();
     }
 }
 

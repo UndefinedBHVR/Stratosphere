@@ -1,14 +1,17 @@
-use std::convert::Infallible;
-use hyper::{Body, Request, Response};
-use crate::{user::structure::{User, UserLoginable}, util::{json_response, parse_body}};
 use super::structure::Auth;
+use crate::{
+    user::structure::{User, UserLoginable},
+    util::{json_response, parse_body},
+};
+use hyper::{Body, Request, Response};
+use std::convert::Infallible;
 
 pub async fn login(mut req: Request<Body>) -> Result<Response<Body>, Infallible> {
     let u: UserLoginable = match parse_body::<UserLoginable>(&mut req).await {
         Ok(val) => val,
         Err(e) => return Ok(json_response(json!({"status": 500, "response": e}))),
     };
-    let user = match User::get_by_login(u.email, u.password){
+    let user = match User::get_by_login(u.email, u.password) {
         Ok(u) => u,
         Err(e) => return Ok(json_response(json!({"status": 500, "response": e}))),
     };

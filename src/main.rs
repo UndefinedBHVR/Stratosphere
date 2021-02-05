@@ -12,10 +12,10 @@ extern crate serde;
 #[macro_use]
 extern crate serde_json;
 //modules
+pub mod auth;
 pub mod schema;
 pub mod user;
 pub mod util;
-pub mod auth;
 /*
 * The main section of the program contains the basic application as well as uncategorized route handlers (IE: temporary testing handlers)
 * This directory should NOT contain route handlers nor middleware handlers for specific modules.

@@ -33,5 +33,5 @@ pub fn get_database() -> DbPoolConn {
     DATABASE.db_connection.get().ok().unwrap()
 }
 pub fn can_connect() -> bool {
-    return DATABASE.db_connection.get().is_ok();
+    DATABASE.db_connection.get().is_ok()
 }
