@@ -1,3 +1,4 @@
+use auth::routes::login;
 use hyper::{Body, Request, Response, Server};
 use routerify::prelude::*;
 use routerify::{Middleware, Router, RouterService};
@@ -13,6 +14,7 @@ extern crate serde;
 extern crate serde_json;
 //modules
 pub mod auth;
+pub mod post;
 pub mod schema;
 pub mod user;
 pub mod util;
@@ -48,6 +50,7 @@ fn create_router() -> Router<Body, Infallible> {
         .middleware(Middleware::pre(logger))
         .get("/", index_handler)
         .post("/user/create", create_user)
+        .post("/auth/login", login)
         .build()
         .unwrap()
 }

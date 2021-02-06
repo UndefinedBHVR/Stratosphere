@@ -9,6 +9,17 @@ table! {
 }
 
 table! {
+    posts (id) {
+        id -> Varchar,
+        owner -> Varchar,
+        public -> Bool,
+        content -> Varchar,
+        created -> Timestamp,
+        edited -> Timestamp,
+    }
+}
+
+table! {
     users (id) {
         id -> Varchar,
         nickname -> Varchar,
@@ -22,5 +33,6 @@ table! {
 }
 
 joinable!(auths -> users (owner));
+joinable!(posts -> users (owner));
 
-allow_tables_to_appear_in_same_query!(auths, users,);
+allow_tables_to_appear_in_same_query!(auths, posts, users,);

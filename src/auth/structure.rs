@@ -3,7 +3,7 @@ use std::ops::Add;
 use crate::schema::auths::dsl as auth_dsl;
 use crate::util::db::{can_connect, get_database};
 use crate::{schema::auths, util::gen_random};
-use chrono::{DateTime, Duration, NaiveDateTime, Utc};
+use chrono::{Duration, NaiveDateTime};
 use diesel::{
     result::Error as dsl_err, ExpressionMethods, PgConnection, QueryDsl, QueryResult, RunQueryDsl,
 };
@@ -48,6 +48,24 @@ impl Auth {
         }
     }
 
+    pub fn get_by_refresh(id: String) -> Result<Self, AuthError> {
+        if can_connect() {
+            let db: &PgConnection = &get_database();
+            let auth: QueryResult<Self> = auth_dsl::auths
+                .filter(auths::refresh.eq(id))
+                .first::<Self>(db);
+            match auth {
+                Ok(u) => match u.has_expired() {
+                    Some(e) => Err(e),
+                    None => Ok(u),
+                },
+                Err(_e) => Err(AuthError::UnknownRefresh),
+            }
+        } else {
+            Err(AuthError::DbFailed)
+        }
+    }
+
     //getters
     pub fn get_token(&self) -> String {
         self.token.clone()
@@ -59,7 +77,6 @@ impl Auth {
 
     //savers
     pub fn save_auth(&mut self) -> Option<AuthError> {
-        let _time: DateTime<Utc> = Utc::now();
         let db: &PgConnection = &get_database();
         if can_connect() {
             let rslt = match Self::get_by_token(self.token.clone()) {
@@ -77,11 +94,11 @@ impl Auth {
         Some(AuthError::DbFailed)
     }
 
-    pub fn refresh(id: String) -> Result<Self, AuthError> {
+    pub fn refresh(&self) -> Result<Self, AuthError> {
         if can_connect() {
             let db: &PgConnection = &get_database();
             let auth: QueryResult<Self> = auth_dsl::auths
-                .filter(auths::refresh.eq(id))
+                .filter(auths::refresh.eq(self.refresh.clone()))
                 .first::<Self>(db);
             let mut u = match auth {
                 Ok(mut u) => {
@@ -141,5 +158,24 @@ impl Display for AuthError {
             Self::UnknownError => write!(f, "An unknown error has occured!"),
             Self::TokenExists => write!(f, "An issue has occured, please try again."),
         }
+    }
+}
+
+pub struct AuthRefreshable {
+    _token: String,
+    refresh: String,
+}
+
+impl AuthRefreshable {
+    pub fn new(_token: String, refresh: String) -> Self {
+        Self { _token, refresh }
+    }
+
+    pub fn is_valid(&self) -> bool {
+        self.to_auth().is_ok()
+    }
+
+    pub fn to_auth(&self) -> Result<Auth, AuthError> {
+        Auth::get_by_refresh(self.refresh.clone())
     }
 }

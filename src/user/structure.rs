@@ -16,7 +16,7 @@ use std::fmt::Display;
 * All functions should be contained in the Implementation and all fucntions MUST relate to the table or struct.
 */
 
-#[derive(Queryable, Insertable, Serialize, Deserialize, Clone, Debug, AsChangeset)]
+#[derive(Queryable, Insertable, Serialize, Deserialize, Debug, AsChangeset)]
 pub struct User {
     id: String,
     nickname: String,
