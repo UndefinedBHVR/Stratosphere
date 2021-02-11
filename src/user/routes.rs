@@ -1,15 +1,10 @@
 use super::structure::{User, UserCreatable};
-use crate::util::{json_response, parse_body};
+use crate::{util::{json_response, parse_body}};
 use hyper::{Body, Request, Response};
-use std::convert::Infallible;
 
-/*
-* The Routes module contains the various routing for each directory.
-* Each Route MUST return a JSON result containing the status followed by the response.
-* IE: `{"status": 200, "result": "Welcome to Stratosphere!"}
-*/
-
-pub async fn create_user(mut req: Request<Body>) -> Result<Response<Body>, Infallible> {
+// Create an instance of a User, and saves it to the database.
+// Takes the UserCreatable struct as the body ex: {"nickname": "testaccount", "email": "johndoe@example.com", "password": "password"}
+pub async fn create_user(mut req: Request<Body>) -> Result<Response<Body>, std::io::Error> {
     let u: UserCreatable = match parse_body::<UserCreatable>(&mut req).await {
         Ok(val) => val,
         Err(e) => return Ok(json_response(json!({"status": 500, "response": e}))),

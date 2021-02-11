@@ -6,11 +6,6 @@ use std::iter;
 
 pub mod db;
 
-/*
-* The Utilities module contains various utility functions that would be used accross the applicaiton.
-* If multiple functions are groupable (IE: Database, HTML Sanitizing), they should be moved to their own sub-module.
-*/
-
 //Takes a JSON Value and creats a Response.
 pub fn json_response(json: Value) -> Response<Body> {
     Response::builder()

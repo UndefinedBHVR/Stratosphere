@@ -1,4 +1,4 @@
-use crate::schema::users;
+use crate::{error::StratError, schema::users};
 use crate::schema::users::dsl as user_dsl;
 use crate::util::{
     db::{can_connect, get_database},
@@ -9,12 +9,6 @@ use chrono::{DateTime, NaiveDateTime, Utc};
 use diesel::{
     result::Error as dsl_err, ExpressionMethods, PgConnection, QueryDsl, QueryResult, RunQueryDsl,
 };
-use std::fmt::Display;
-
-/*
-* The Structure module contains a Database accessing Struct & its Implementation.
-* All functions should be contained in the Implementation and all fucntions MUST relate to the table or struct.
-*/
 
 #[derive(Queryable, Insertable, Serialize, Deserialize, Debug, AsChangeset)]
 pub struct User {
@@ -48,20 +42,20 @@ impl User {
     }
 
     //creators
-    pub fn get_user(id: String) -> Result<Self, UserError> {
+    pub fn get_user(id: String) -> Result<Self, StratError> {
         if can_connect() {
             let db: &PgConnection = &get_database();
             let user: QueryResult<User> = user_dsl::users.find(id).first::<User>(db);
             match user {
                 Ok(u) => Ok(u),
-                Err(_e) => Err(UserError::NotFound),
+                Err(_e) => Err(StratError::UserNotFound),
             }
         } else {
-            Err(UserError::DbFailed)
+            Err(StratError::DbFailed)
         }
     }
 
-    pub fn get_by_login(email: String, password: String) -> Result<Self, UserError> {
+    pub fn get_by_login(email: String, password: String) -> Result<Self, StratError> {
         if can_connect() {
             let db: &PgConnection = &get_database();
             let query: QueryResult<User> = user_dsl::users
@@ -69,14 +63,14 @@ impl User {
                 .first::<User>(db);
             let user = match query {
                 Ok(u) => u,
-                Err(_e) => return Err(UserError::BadLogin),
+                Err(_e) => return Err(StratError::BadLogin),
             };
             if Self::verify_pass(password, &user.password) {
                 return Ok(user);
             }
-            Err(UserError::BadLogin)
+            Err(StratError::BadLogin)
         } else {
-            Err(UserError::DbFailed)
+            Err(StratError::DbFailed)
         }
     }
 
@@ -108,22 +102,22 @@ impl User {
                 Err(e) => return Err(format!("{:?}", Self::match_errors(e))),
             }
         }
-        Err(format!("{:?}", UserError::DbFailed))
+        Err(format!("{:?}", StratError::DbFailed))
     }
 
     //util
-    fn match_errors(e: dsl_err) -> UserError {
+    fn match_errors(e: dsl_err) -> StratError {
         match e.to_string().as_str() {
             "duplicate key value violates unique constraint \"users_email_key\"" => {
-                UserError::EmailInUse
+                StratError::EmailInUse
             }
             "duplicate key value violates unique constraint \"users_id_key\"" => {
-                UserError::IdExists
+                StratError::UniqueExists
             }
             "duplicate key value violates unique constraint \"users_nickname_key\"" => {
-                UserError::NameExists
+                StratError::NameExists
             }
-            _ => UserError::Unknown,
+            _ => StratError::Unknown,
         }
     }
 
@@ -137,45 +131,6 @@ impl User {
         return argon2::verify_encoded(encoded, password.as_ref()).unwrap();
     }
 }
-
-/*
-* This subsection contains the various Errors a User can have as well as the display implementation.
-*/
-
-#[derive(Serialize, Debug)]
-pub enum UserError {
-    NotFound,
-    EmailInUse,
-    DbFailed,
-    IdExists,
-    NameExists,
-    Unknown,
-    BadLogin,
-}
-
-impl Display for UserError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match *self {
-            Self::NotFound => write!(f, "The requested User could not be found!"),
-            Self::EmailInUse => write!(f, "The requested Email is already in use!"),
-            Self::DbFailed => write!(f, "The Database appears to be offline!"),
-            Self::IdExists => write!(
-                f,
-                "The Database encountered an ID collision. Please try again!"
-            ),
-            Self::NameExists => write!(f, "The requested Username is already in use!"),
-            Self::Unknown => write!(f, "An unknown error has occured!"),
-            Self::BadLogin => write!(
-                f,
-                "The Email or Password provided does not match our records!"
-            ),
-        }
-    }
-}
-
-/*
-* This subsection contains various temporary structs (IE: Logins, Safe Data, and Others)
-*/
 
 #[derive(Deserialize)]
 pub struct UserCreatable {
