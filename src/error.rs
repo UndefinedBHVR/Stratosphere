@@ -16,6 +16,8 @@ pub enum StratError {
     TokenExpired,
     AuthExpired,
     UnknownRefresh,
+    InvalidToken,
+    InvalidRefresh
 }
 impl Display for StratError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -29,9 +31,11 @@ impl Display for StratError {
             StratError::BadLogin => write!(f, "The Email or Password submitted is invalid!"),
             StratError::UnknownToken => write!(f, "The Token provided could not be linked to a session!"),
             StratError::TokenExpired => write!(f, "The Token provided has expired!"),
-            StratError::AuthExpired => write!(f, "The Authorization linked to this token has expired."),
-            StratError::UnknownRefresh => write!(f, "The Refresh provided could not be linked to a session!"),
-            StratError::AuthFailed => write!(f, "An Error occured while verifying authentication.")
+            StratError::AuthExpired => write!(f, "The Authorization Token linked to this token has expired."),
+            StratError::UnknownRefresh => write!(f, "The Refresh Token provided could not be linked to a session!"),
+            StratError::AuthFailed => write!(f, "An Error occured while verifying authentication."),
+            StratError::InvalidToken => write!(f, "The Authorization Token provided is malformed or missing."),
+            StratError::InvalidRefresh => write!(f, "The Refresh Token provided is malformed or missing.")
         }
     }
 }

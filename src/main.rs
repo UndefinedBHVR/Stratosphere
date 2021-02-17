@@ -27,13 +27,13 @@ const MODE: &str = "Debug";
 #[cfg(release)]
 const MODE: &str = "Release";
 
-async fn index_handler(_: Request<Body>) -> Result<Response<Body>, std::io::Error> {
+async fn index_handler(_: Request<Body>) -> Result<Response<Body>, StratError> {
     let json = json_response(json!({"status": 200, "response": "Welcome to Stratosphere!"}));
     Ok(json)
 }
 
 //Log all requests if we're not in Release mode.
-async fn logger(req: Request<Body>) -> Result<Request<Body>, std::io::Error> {
+async fn logger(req: Request<Body>) -> Result<Request<Body>, StratError> {
     #[cfg(not(release))]
     println!(
         "{} {} {}",
@@ -44,7 +44,7 @@ async fn logger(req: Request<Body>) -> Result<Request<Body>, std::io::Error> {
     Ok(req)
 }
 
-fn create_router() -> Router<Body, std::io::Error> {
+fn create_router() -> Router<Body, StratError> {
     Router::builder()
         .middleware(Middleware::pre(logger))
         .post("/user/create", create_user)
@@ -56,6 +56,7 @@ fn create_router() -> Router<Body, std::io::Error> {
             Router::builder()
                 .middleware(Middleware::pre(auth_middleware))
                 .get("/", index_handler)
+                .err_handler(error_handler)
                 .build()
                 .unwrap(),
         )
@@ -63,20 +64,22 @@ fn create_router() -> Router<Body, std::io::Error> {
         .build()
         .unwrap()
 }
-async fn error_parse(e: impl std::error::Error) -> String{
-    if let Some(e) = e.source(){
-        return format!("{}", e)
+pub fn err_to_resp(e: Box<dyn std::error::Error + Sync + Send + 'static>) -> Response<Body> {
+    if let Some(e) = e.downcast_ref::<StratError>(){
+        json_response(json!({"status": 500, "response": e}))
+    }else{
+        json_response(json!({"status": 500, "response": "An internal server error has occured!"}))
     }
-    "Failed to parse Error!".to_string()
 }
+
 async fn error_handler(e: routerify::Error) -> Response<Body> {
-    let e = match &e{
-        routerify::Error::HandlePreMiddlewareRequest(_a) => {
-            error_parse(e).await
-        }
-        _ => format!("{}",StratError::Unknown)
-    };
-    json_response(json!({"status": 500, "response": e}))
+    match e{
+        routerify::Error::HandlePreMiddlewareRequest(e) => {err_to_resp(e)}
+        routerify::Error::HandleRequest(e, _) => {err_to_resp(e)}
+        routerify::Error::HandlePostMiddlewareWithoutInfoRequest(e) => {err_to_resp(e)}
+        routerify::Error::HandlePostMiddlewareWithInfoRequest(e) => {err_to_resp(e)}
+        _ => json_response(json!({"status": 500, "response": "An internal server error has occured!"}))
+    }
 }
 #[tokio::main]
 async fn main() {

@@ -8,9 +8,7 @@ edition = "2018"
 
 [dependencies]
 hyper = "0.14.4"
-routerify = { git = "https://github.com/seanpianka/routerify.git", branch = "master" }
-routerify-cors = { git = "https://github.com/seanpianka/routerify-cors.git", branch = "master" }
-routerify-query = { git = "https://github.com/seanpianka/routerify-query.git", branch = "master" }
+routerify = { git = "https://github.com/routerify/routerify.git", branch = "master" }
 multer = "1.2"
 diesel = { version = "1.4.5", features = ["postgres", "r2d2", "chrono"] }
 dotenv = "0.15.0"

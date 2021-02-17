@@ -85,7 +85,7 @@ impl User {
     }
 
     //savers
-    pub fn save_user(&mut self) -> Result<bool, String> {
+    pub fn save_user(&mut self) -> Result<bool, StratError> {
         let time: DateTime<Utc> = Utc::now();
         self.updated_at = time.naive_utc();
         let db: &PgConnection = &get_database();
@@ -99,10 +99,10 @@ impl User {
             };
             match rslt {
                 Ok(_) => return Ok(true),
-                Err(e) => return Err(format!("{:?}", Self::match_errors(e))),
+                Err(e) => return Err(Self::match_errors(e)),
             }
         }
-        Err(format!("{:?}", StratError::DbFailed))
+        Err(StratError::DbFailed)
     }
 
     //util
