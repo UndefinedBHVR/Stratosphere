@@ -2,7 +2,7 @@ use crate::{
     error::StratError,
     post::structure::Post,
     user::structure,
-    util::{json_response, parse_cookies},
+    util::{json_response},
 };
 use hyper::{Body, Request, Response};
 
@@ -10,8 +10,6 @@ use multer::{Constraints, Multipart, SizeLimit};
 use routerify::ext::RequestExt;
 // Creates a post using Multipart Form Data
 pub async fn create_post(req: Request<Body>) -> Result<Response<Body>, StratError> {
-    let _cookies = parse_cookies(req.headers());
-    // The Authentication SHOULD be valid still, so we can just directly get the auth using the Token.
     let user = req.context::<structure::User>().unwrap();
     let boundary = req
         .headers()
