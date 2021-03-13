@@ -60,7 +60,7 @@ fn create_router() -> Router<Body, StratError> {
                 .middleware(Middleware::pre(auth_middleware))
                 .get("/", index_handler)
                 .post("/post/create", create_post)
-                .put("/post/edit", edit_post)
+                .patch("/post/edit", edit_post)
                 .delete("/post/delete", delete_post)
                 .err_handler(error_handler)
                 .build()
@@ -74,7 +74,7 @@ fn create_router() -> Router<Body, StratError> {
 // Take an Error, if its our type, we return this status and response
 pub fn err_to_resp(e: Box<dyn std::error::Error + Sync + Send + 'static>) -> Response<Body> {
     if let Some(e) = e.downcast_ref::<StratError>() {
-        json_response(json!({"status": 500, "response": e}))
+        json_response(json!({"status": 500, "response": format!("{}", e)}))
     } else {
         json_response(json!({"status": 500, "response": "An internal server error has occured!"}))
     }

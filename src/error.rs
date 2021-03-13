@@ -25,6 +25,8 @@ pub enum StratError {
     // Post Errors
     UnknownPost,
     NoPermission,
+    // This Error is for testing only!
+    Custom(String),
 }
 impl Display for StratError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -82,6 +84,9 @@ impl Display for StratError {
             }
             StratError::NoPermission => {
                 write!(f, "The Authenticated User is not the owner of this post.")
+            }
+            StratError::Custom(val) => {
+                write!(f, "{}", val)
             }
         }
     }

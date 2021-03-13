@@ -13,7 +13,7 @@ pub async fn create_post(req: Request<Body>) -> Result<Response<Body>, StratErro
     let user = req.context::<structure::User>().unwrap();
     let boundary = req
         .headers()
-        .get("CONTENT_TYPE")
+        .get("Content-Type")
         .and_then(|ct| ct.to_str().ok())
         .and_then(|ct| multer::parse_boundary(ct).ok());
 
@@ -47,9 +47,8 @@ pub async fn create_post(req: Request<Body>) -> Result<Response<Body>, StratErro
     if let Some(e) = post.save_post() {
         return Err(e);
     }
-    Ok(json_response(
-        json!({"status": 200, "response": "Post successfully created!"}),
-    ))
+    let resp = format!("Post successfully created! {}", post.get_id());
+    Ok(json_response(json!({"status": 200, "response": resp})))
 }
 
 async fn parse_post(
@@ -65,14 +64,15 @@ async fn parse_post(
     while match multipart.next_field().await {
         Ok(f) if f.is_some() => {
             let field = f.unwrap();
-            if let Some(ty) = field.content_type() {
-                if ty.eq(&mime::TEXT_PLAIN) {
-                    content = match field.text().await {
-                        Ok(t) => t,
-                        Err(_e) => return Err(StratError::BadMulti),
-                    }
-                }
+            // We can safely unwrap because there is no situation
+            // Where a field can be unnamed
+            if field.name().unwrap() == "media" {
+                return Err(StratError::MediaUnsupported);
             }
+            content = match field.text().await {
+                Ok(t) => t,
+                Err(_e) => return Err(StratError::BadMulti),
+            };
             true
         }
         Ok(_f) => false,
@@ -80,7 +80,9 @@ async fn parse_post(
             multer::Error::FieldSizeExceeded { limit, field_name } if field_name.is_some() => {
                 return Err(StratError::OversizedField(field_name.unwrap(), limit))
             }
-            _ => return Err(StratError::BadMulti),
+            _ => {
+                return Err(StratError::BadMulti);
+            }
         },
     } {}
     Ok(Post::new(content, owner, true))
@@ -148,6 +150,6 @@ pub async fn delete_post(mut req: Request<Body>) -> Result<Response<Body>, Strat
     }
 
     Ok(json_response(
-        json!({"status": 200, "response": "Post successfully edited!"}),
+        json!({"status": 200, "response": "Post successfully deleted!"}),
     ))
 }

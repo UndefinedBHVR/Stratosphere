@@ -101,4 +101,8 @@ impl Post {
     pub fn get_owner(&self) -> &str {
         &self.owner
     }
+
+    pub fn get_id(&self) -> &str {
+        &self.id
+    }
 }
