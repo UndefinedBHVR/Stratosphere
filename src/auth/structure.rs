@@ -1,13 +1,12 @@
 use std::ops::Add;
 
-use crate::{error::StratError, schema::auths::dsl as auth_dsl};
 use crate::util::db::{can_connect, get_database};
+use crate::{error::StratError, schema::auths::dsl as auth_dsl};
 use crate::{schema::auths, util::gen_random};
 use chrono::{Duration, NaiveDateTime};
 use diesel::{
     result::Error as dsl_err, ExpressionMethods, PgConnection, QueryDsl, QueryResult, RunQueryDsl,
 };
-
 
 #[derive(Queryable, Insertable, Serialize, Deserialize, Debug, AsChangeset)]
 pub struct Auth {
@@ -30,7 +29,7 @@ impl Auth {
         }
     }
 
-    pub fn get_by_token(id: String) -> Result<Self, StratError> {
+    pub fn get_by_token(id: &str) -> Result<Self, StratError> {
         if can_connect() {
             let db: &PgConnection = &get_database();
             let auth: QueryResult<Self> = auth_dsl::auths
@@ -48,7 +47,7 @@ impl Auth {
         }
     }
 
-    pub fn get_by_refresh(id: String) -> Result<Self, StratError> {
+    pub fn get_by_refresh(id: &str) -> Result<Self, StratError> {
         if can_connect() {
             let db: &PgConnection = &get_database();
             let auth: QueryResult<Self> = auth_dsl::auths
@@ -67,19 +66,22 @@ impl Auth {
     }
 
     //getters
-    pub fn get_token(&self) -> String {
-        self.token.clone()
+    pub fn get_token(&self) -> &str {
+        &self.token
     }
 
-    pub fn get_refresh(&self) -> String {
-        self.refresh.clone()
+    pub fn get_refresh(&self) -> &str {
+        &self.refresh
     }
 
+    pub fn get_owner(&self) -> &str {
+        &self.owner
+    }
     //savers
     pub fn save_auth(&mut self) -> Option<StratError> {
         let db: &PgConnection = &get_database();
         if can_connect() {
-            let rslt = match Self::get_by_token(self.token.clone()) {
+            let rslt = match Self::get_by_token(&self.token) {
                 Ok(_u) => diesel::update(auths::table)
                     .set(&*self)
                     .filter(auth_dsl::token.eq(&self.token))
@@ -152,7 +154,7 @@ impl AuthRefresh {
     }
 
     pub fn to_auth(&self) -> Result<Auth, StratError> {
-        Auth::get_by_refresh(self.refresh.clone())
+        Auth::get_by_refresh(&self.refresh)
     }
 }
 
@@ -169,6 +171,6 @@ impl AuthToken {
     }
 
     pub fn to_auth(&self) -> Result<Auth, StratError> {
-        Auth::get_by_token(self.token.clone())
+        Auth::get_by_token(&self.token)
     }
 }

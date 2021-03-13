@@ -1,5 +1,8 @@
 use super::structure::{User, UserCreatable};
-use crate::{error::StratError, util::{json_response, parse_body}};
+use crate::{
+    error::StratError,
+    util::{json_response, parse_body},
+};
 use hyper::{Body, Request, Response};
 
 // Create an instance of a User, and saves it to the database.

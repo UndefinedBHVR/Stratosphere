@@ -29,9 +29,13 @@ lazy_static! {
         }
     };
 }
+
+// Gives us a connection pool
 pub fn get_database() -> DbPoolConn {
     DATABASE.db_connection.get().ok().unwrap()
 }
+
+// Checks if we're capable of connecting, has to be done before get_database()
 pub fn can_connect() -> bool {
     DATABASE.db_connection.get().is_ok()
 }

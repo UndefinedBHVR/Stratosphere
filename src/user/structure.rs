@@ -1,16 +1,16 @@
-use crate::{error::StratError, schema::users};
 use crate::schema::users::dsl as user_dsl;
 use crate::util::{
     db::{can_connect, get_database},
     gen_random,
 };
+use crate::{error::StratError, schema::users};
 use argon2::{self, Config};
 use chrono::{DateTime, NaiveDateTime, Utc};
 use diesel::{
     result::Error as dsl_err, ExpressionMethods, PgConnection, QueryDsl, QueryResult, RunQueryDsl,
 };
 
-#[derive(Queryable, Insertable, Serialize, Deserialize, Debug, AsChangeset)]
+#[derive(Queryable, Insertable, Serialize, Deserialize, Debug, AsChangeset, Clone)]
 pub struct User {
     id: String,
     nickname: String,
@@ -23,26 +23,28 @@ pub struct User {
 }
 
 impl User {
+    // Creates a new User Struct but doesn't save it.
     pub fn new(nickname: String, email: String, password: String) -> Self {
         let time: DateTime<Utc> = Utc::now();
         Self {
             id: gen_random(23),
             nickname,
             email,
-            password: Self::hash_pass(password),
+            password: Self::hash_pass(&password),
             rank: 0,
             is_priv: false,
             updated_at: time.naive_utc(),
             created_at: time.naive_utc(),
         }
     }
-    //getters
-    pub fn get_id(&self) -> String {
-        self.id.clone()
+
+    // Gets a reference to the user's ID
+    pub fn get_id(&self) -> &str {
+        &self.id
     }
 
-    //creators
-    pub fn get_user(id: String) -> Result<Self, StratError> {
+    // Gets an instance of the user using their ID
+    pub fn get_user(id: &str) -> Result<Self, StratError> {
         if can_connect() {
             let db: &PgConnection = &get_database();
             let user: QueryResult<User> = user_dsl::users.find(id).first::<User>(db);
@@ -55,7 +57,8 @@ impl User {
         }
     }
 
-    pub fn get_by_login(email: String, password: String) -> Result<Self, StratError> {
+    // Find a user using the username and password combination
+    pub fn get_by_login(email: &str, password: &str) -> Result<Self, StratError> {
         if can_connect() {
             let db: &PgConnection = &get_database();
             let query: QueryResult<User> = user_dsl::users
@@ -76,21 +79,21 @@ impl User {
 
     //setters
 
-    pub fn set_nickname(&mut self, nickname: String) {
-        self.nickname = nickname;
+    pub fn set_nickname(&mut self, nickname: &str) {
+        self.nickname = nickname.to_owned();
     }
 
-    pub fn set_password(&mut self, password: String) {
+    pub fn set_password(&mut self, password: &str) {
         self.password = Self::hash_pass(password);
     }
 
-    //savers
+    // Saves our user back into the database.
     pub fn save_user(&mut self) -> Result<bool, StratError> {
         let time: DateTime<Utc> = Utc::now();
         self.updated_at = time.naive_utc();
         let db: &PgConnection = &get_database();
         if can_connect() {
-            let rslt = match Self::get_user(self.id.clone()) {
+            let rslt = match Self::get_user(&self.id) {
                 Ok(_u) => diesel::update(users::table)
                     .set(&*self)
                     .filter(user_dsl::id.eq(&self.id))
@@ -105,7 +108,8 @@ impl User {
         Err(StratError::DbFailed)
     }
 
-    //util
+    // util
+    // Turns Diesel Error strings into our custom error types.
     fn match_errors(e: dsl_err) -> StratError {
         match e.to_string().as_str() {
             "duplicate key value violates unique constraint \"users_email_key\"" => {
@@ -121,13 +125,15 @@ impl User {
         }
     }
 
-    fn hash_pass(password: String) -> String {
+    // Function for hasing passwords (duh)
+    fn hash_pass(password: &str) -> String {
         let salt = gen_random(30);
         let config = Config::default();
         argon2::hash_encoded(password.as_ref(), salt.as_ref(), &config).unwrap()
     }
 
-    fn verify_pass(password: String, encoded: &str) -> bool {
+    //Checks if the submitted password matches our hash
+    fn verify_pass(password: &str, encoded: &str) -> bool {
         return argon2::verify_encoded(encoded, password.as_ref()).unwrap();
     }
 }
