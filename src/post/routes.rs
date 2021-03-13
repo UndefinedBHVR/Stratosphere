@@ -64,17 +64,27 @@ async fn parse_post(
     while match multipart.next_field().await {
         Ok(f) if f.is_some() => {
             let field = f.unwrap();
-            // We can safely unwrap because there is no situation
-            // Where a field can be unnamed
-            if field.name().unwrap() == "media" {
-                return Err(StratError::MediaUnsupported);
+            match field.name().unwrap() {
+                "media" => {},
+                // If someone decides to send multiple Content
+                // Fields, the last one is the only one
+                // We use
+                "content" => {
+                    // "content" should ONLY be text.
+                    content = match field.text().await {
+                        Ok(t) => t,
+                        Err(_e) => return Err(StratError::BadMulti),
+                    };
+                }
+                _ => {
+                    // This should be impossible
+                    return Err(StratError::BadMulti)
+                }
             }
-            content = match field.text().await {
-                Ok(t) => t,
-                Err(_e) => return Err(StratError::BadMulti),
-            };
+            // Keep looping
             true
         }
+        // If there is no field, we immediately escape.
         Ok(_f) => false,
         Err(e) => match e {
             multer::Error::FieldSizeExceeded { limit, field_name } if field_name.is_some() => {
@@ -85,6 +95,12 @@ async fn parse_post(
             }
         },
     } {}
+    // If someone decides they don't want
+    // To have a post body
+    // We reject the request
+    if content.is_empty() {
+        return Err(StratError::NeedsContent)
+    }
     Ok(Post::new(content, owner, true))
 }
 
@@ -101,20 +117,28 @@ pub async fn edit_post(mut req: Request<Body>) -> Result<Response<Body>, StratEr
         Err(e) => return Ok(json_response(json!({"status": 500, "response": e}))),
     };
 
+    // Posts can only have up to 500 characters
+    // So we refuse the content if it exceeds that
     if p.content.len() > 500 {
         return Err(StratError::OversizedField("content".to_owned(), 500));
     }
 
+    // Get post, return Error if any.
     let mut post = match Post::get_by_id(&p.id) {
         Ok(p) => p,
         Err(e) => return Err(e),
     };
 
+    // Permission Check
+    // TODO: Replace with proper permissions system!
     if post.get_owner() != user.get_id() {
         return Err(StratError::NoPermission);
     }
-
+    
+    // Edit
     post.edit(p.content);
+
+    // Save
     if let Some(e) = post.save_post() {
         return Err(e);
     }
@@ -136,15 +160,19 @@ pub async fn delete_post(mut req: Request<Body>) -> Result<Response<Body>, Strat
         Err(e) => return Ok(json_response(json!({"status": 500, "response": e}))),
     };
 
+    // Get post
     let post = match Post::get_by_id(&p.id) {
         Ok(p) => p,
         Err(e) => return Err(e),
     };
 
+    // Permission Check
+    // TODO: Replace with proper permissions system!
     if post.get_owner() != user.get_id() {
         return Err(StratError::NoPermission);
     }
 
+    // Delete
     if let Some(e) = post.delete_post() {
         return Err(e);
     }

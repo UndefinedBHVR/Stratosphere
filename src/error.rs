@@ -25,6 +25,7 @@ pub enum StratError {
     // Post Errors
     UnknownPost,
     NoPermission,
+    NeedsContent,
     // This Error is for testing only!
     Custom(String),
 }
@@ -87,6 +88,9 @@ impl Display for StratError {
             }
             StratError::Custom(val) => {
                 write!(f, "{}", val)
+            }
+            StratError::NeedsContent => {
+                write!(f, "The post submitted contains no text!")
             }
         }
     }

@@ -6,11 +6,6 @@ use dotenv::dotenv;
 use lazy_static::lazy_static;
 use std::env;
 
-/*
-* The Database submodule contains all utilities related to accessing the database.
-* This file should NOT contain table specific functions.
-*/
-
 type DbPool = Pool<ConnectionManager<PgConnection>>;
 type DbPoolConn = PooledConnection<ConnectionManager<PgConnection>>;
 pub struct Database {
