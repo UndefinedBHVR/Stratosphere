@@ -132,9 +132,13 @@ impl User {
         argon2::hash_encoded(password.as_ref(), salt.as_ref(), &config).unwrap()
     }
 
-    //Checks if the submitted password matches our hash
+    // Checks if the submitted password matches our hash
     fn verify_pass(password: &str, encoded: &str) -> bool {
         return argon2::verify_encoded(encoded, password.as_ref()).unwrap();
+    }
+
+    pub fn get_rank(&self) -> i32 {
+        self.rank
     }
 }
 

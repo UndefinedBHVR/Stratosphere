@@ -1,7 +1,7 @@
 use auth::routes::{auth_middleware, login, refresh};
 use error::StratError;
 use hyper::{Body, Request, Response, Server};
-use post::routes::create_post;
+use post::routes::{create_post, delete_post, edit_post};
 use routerify::prelude::*;
 use routerify::{Middleware, Router, RouterService};
 use std::net::SocketAddr;
@@ -60,6 +60,8 @@ fn create_router() -> Router<Body, StratError> {
                 .middleware(Middleware::pre(auth_middleware))
                 .get("/", index_handler)
                 .post("/post/create", create_post)
+                .put("/post/edit", edit_post)
+                .delete("/post/delete", delete_post)
                 .err_handler(error_handler)
                 .build()
                 .unwrap(),

@@ -24,6 +24,7 @@ pub enum StratError {
     MediaUnsupported,
     // Post Errors
     UnknownPost,
+    NoPermission,
 }
 impl Display for StratError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -78,6 +79,9 @@ impl Display for StratError {
             }
             StratError::UnknownPost => {
                 write!(f, "The requested Post could not be found.")
+            }
+            StratError::NoPermission => {
+                write!(f, "The Authenticated User is not the owner of this post.")
             }
         }
     }

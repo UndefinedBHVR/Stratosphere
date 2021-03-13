@@ -42,7 +42,7 @@ impl Post {
     }
 
     // Finds a post using its ID.
-    pub fn get_by_id(id: String) -> Result<Self, StratError> {
+    pub fn get_by_id(id: &str) -> Result<Self, StratError> {
         if can_connect() {
             let db: &PgConnection = &get_database();
             let auth: QueryResult<Self> =
@@ -60,7 +60,7 @@ impl Post {
     pub fn save_post(&self) -> Option<StratError> {
         let db: &PgConnection = &get_database();
         if can_connect() {
-            let rslt = match Self::get_by_id(self.id.clone()) {
+            let rslt = match Self::get_by_id(&self.id) {
                 Ok(_u) => diesel::update(posts::table)
                     .set(&*self)
                     .filter(post_dsl::id.eq(&self.id))
@@ -78,5 +78,27 @@ impl Post {
     // Converts Diesel Errors into regular Errors.
     fn match_errors(_e: dsl_err) -> StratError {
         StratError::Unknown
+    }
+
+    // Deletes this post, consuming self.
+    pub fn delete_post(self) -> Option<StratError> {
+        let db: &PgConnection = &get_database();
+        if can_connect() {
+            let rslt = match Self::get_by_id(&self.id) {
+                Ok(_u) => {
+                    diesel::delete(posts::table.filter(post_dsl::id.eq(&self.id))).execute(db)
+                }
+                Err(_e) => diesel::insert_into(posts::table).values(self).execute(db),
+            };
+            match rslt {
+                Ok(_) => return None,
+                Err(e) => return Some(Self::match_errors(e)),
+            }
+        }
+        Some(StratError::DbFailed)
+    }
+
+    pub fn get_owner(&self) -> &str {
+        &self.owner
     }
 }

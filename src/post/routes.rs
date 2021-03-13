@@ -2,12 +2,12 @@ use crate::{
     error::StratError,
     post::structure::Post,
     user::structure,
-    util::{json_response},
+    util::{json_response, parse_body},
 };
 use hyper::{Body, Request, Response};
-
 use multer::{Constraints, Multipart, SizeLimit};
 use routerify::ext::RequestExt;
+
 // Creates a post using Multipart Form Data
 pub async fn create_post(req: Request<Body>) -> Result<Response<Body>, StratError> {
     let user = req.context::<structure::User>().unwrap();
@@ -84,4 +84,70 @@ async fn parse_post(
         },
     } {}
     Ok(Post::new(content, owner, true))
+}
+
+pub async fn edit_post(mut req: Request<Body>) -> Result<Response<Body>, StratError> {
+    let user = req.context::<structure::User>().unwrap();
+    #[derive(Serialize, Deserialize)]
+    struct PostEdit {
+        id: String,
+        content: String,
+    }
+
+    let p: PostEdit = match parse_body::<PostEdit>(&mut req).await {
+        Ok(val) => val,
+        Err(e) => return Ok(json_response(json!({"status": 500, "response": e}))),
+    };
+
+    if p.content.len() > 500 {
+        return Err(StratError::OversizedField("content".to_owned(), 500));
+    }
+
+    let mut post = match Post::get_by_id(&p.id) {
+        Ok(p) => p,
+        Err(e) => return Err(e),
+    };
+
+    if post.get_owner() != user.get_id() {
+        return Err(StratError::NoPermission);
+    }
+
+    post.edit(p.content);
+    if let Some(e) = post.save_post() {
+        return Err(e);
+    }
+
+    Ok(json_response(
+        json!({"status": 200, "response": "Post successfully edited!"}),
+    ))
+}
+
+pub async fn delete_post(mut req: Request<Body>) -> Result<Response<Body>, StratError> {
+    let user = req.context::<structure::User>().unwrap();
+    #[derive(Serialize, Deserialize)]
+    struct PostDelete {
+        id: String,
+    }
+
+    let p: PostDelete = match parse_body::<PostDelete>(&mut req).await {
+        Ok(val) => val,
+        Err(e) => return Ok(json_response(json!({"status": 500, "response": e}))),
+    };
+
+    let post = match Post::get_by_id(&p.id) {
+        Ok(p) => p,
+        Err(e) => return Err(e),
+    };
+
+    if post.get_owner() != user.get_id() {
+        return Err(StratError::NoPermission);
+    }
+
+    if let Some(e) = post.delete_post() {
+        return Err(e);
+    }
+
+    Ok(json_response(
+        json!({"status": 200, "response": "Post successfully edited!"}),
+    ))
 }
